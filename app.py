@@ -1,0 +1,39 @@
+from flask import Flask, render_template, request
+import json
+from transformers import pipeline
+
+app = Flask(__name__)
+
+# Load bilingual dictionary
+with open("data/dictionary.json", "r", encoding="utf-8") as f:
+    dictionary = json.load(f)
+
+# Load small translation model (English → Twi fine-tuning can be simulated using multilingual model)
+# We'll use Helsinki-NLP's multilingual Marian model (English to Akan isn't trained, but we'll simulate)
+translator = pipeline("translation", model="Helsinki-NLP/opus-mt-en-fr")
+
+def translate_to_twi(text):
+    text = text.lower().strip()
+    
+    # 1. Try dictionary first
+    if text in dictionary:
+        return dictionary[text]
+    
+    # 2. Otherwise, use the transformer model
+    try:
+        result = translator(text, max_length=100)
+        translation = result[0]['translation_text']
+        return f"(AI-based) {translation}"
+    except Exception as e:
+        return f"Error: {e}"
+
+@app.route("/", methods=["GET", "POST"])
+def index():
+    translation = None
+    if request.method == "POST":
+        text = request.form["text"]
+        translation = translate_to_twi(text)
+    return render_template("index.html", translation=translation)
+
+if __name__ == "__main__":
+    app.run(debug=True)
