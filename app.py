@@ -8,18 +8,17 @@ app = Flask(__name__)
 with open("data/dictionary.json", "r", encoding="utf-8") as f:
     dictionary = json.load(f)
 
-# Load small translation model (English → Twi fine-tuning can be simulated using multilingual model)
-# We'll use Helsinki-NLP's multilingual Marian model (English to Akan isn't trained, but we'll simulate)
+# Load small translation model 
 translator = pipeline("translation", model="Helsinki-NLP/opus-mt-en-fr")
 
 def translate_to_twi(text):
     text = text.lower().strip()
     
-    # 1. Try dictionary first
+    # Try dictionary first
     if text in dictionary:
         return dictionary[text]
     
-    # 2. Otherwise, use the transformer model
+    # Otherwise use the transformer model
     try:
         result = translator(text, max_length=100)
         translation = result[0]['translation_text']
